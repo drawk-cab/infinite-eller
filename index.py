@@ -32,7 +32,7 @@ def visit(mymaze, iterations=10000):
         grow(radius)
     for i in range(iterations):
         if (i % 20000 == 10000):
-            open('out/%s-%s.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
+            open('out/%s-%08d.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
             print("eB=%f, after %d iterations, %d visited, %d finished" % (mymaze.pExtendBias, i, len(visited), len(finished)))
 
         visited.add((x,y))
@@ -152,13 +152,15 @@ if __name__=="__main__":
         mymaze = maze.Maze(12, pExtendBias=eB, pExtendSensitivity=1.0, pUnifyLower=1.0, pMakeLoop=0.5)
 
         try:
+            os.mkdir('out')
+        except OSError:
+            pass
+        try:
             visit(mymaze, 10000000)
         except AbortVisit as e:
             print("%s: %s" % (e.__class__.__name__, e))
         except Exception as e:
             open('out/%s-error.png' % (mymaze.pExtendBias),'wb').write(mymaze.png(mymaze[0,0].colour))
             raise e
-
-
-        del(mymaze)
+        del mymaze
 
