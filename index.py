@@ -32,7 +32,7 @@ def visit(mymaze, iterations=10000):
         grow(radius)
     for i in range(iterations):
         if (i % 20000 == 10000):
-            open('out/%s-%s.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
+            open('out/%s-%08d.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
             print("eB=%f, after %d iterations, %d visited, %d finished" % (mymaze.pExtendBias, i, len(visited), len(finished)))
 
         visited.add((x,y))
@@ -46,13 +46,15 @@ def visit(mymaze, iterations=10000):
             mycell = mymaze[x,y]
         except maze.WalledIn as e:
             # teleport out
-            finished.add((x,y))
-            visited.remove((x,y))
-            if len(visited)==0:
-                open('out/%s-%s-walledin.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
-                raise AbortVisit("eB=%f, totally walled in at %d" % (mymaze.pExtendBias, i))
-            else:
-                nx,ny = setchoice(visited)
+            # finished.add((x,y))
+            # visited.remove((x,y))
+            # if len(visited)==0:
+            #   open('out/%s-%08d-walledin.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
+            #   raise AbortVisit("eB=%f, totally walled in at %d" % (mymaze.pExtendBias, i))
+            # else:
+            #   nx,ny = setchoice(visited)
+            open('out/%s-%08d-walledin.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
+            raise AbortVisit("eB=%f, maze generator reports walled in at %d" % (mymaze.pExtendBias, i))
 
         while choices:
             dirn = choices.pop(mymaze.random.randint(0,len(choices)-1))
@@ -64,10 +66,11 @@ def visit(mymaze, iterations=10000):
                 if (nx,ny) not in visited and (nx,ny) not in finished:
                     break
         else:
+            # teleport out
             finished.add((x,y))
             visited.remove((x,y))
             if len(visited)==0:
-                open('out/%s-%s-walledin.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
+                open('out/%s-%08d-walledin.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
                 raise AbortVisit("eB=%f, totally walled in at %d" % (mymaze.pExtendBias, i))
             else:
                 nx,ny = setchoice(visited)
@@ -148,10 +151,13 @@ if __name__=="__main__":
                       "Cell": maze.Cell
                     })
 
-    for eB in (0.6,):
+    for eB in (0.01,):
         mymaze = maze.Maze(12, pExtendBias=eB, pExtendSensitivity=1.0, pUnifyLower=1.0, pMakeLoop=0.5)
 
-        try:
+        if not os.path.isdir('out'):
+            os.mkdir('out')
+
+        try:        
             visit(mymaze, 10000000)
         except AbortVisit as e:
             print("%s: %s" % (e.__class__.__name__, e))

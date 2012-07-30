@@ -233,7 +233,7 @@ class Maze:
                 colour.getGroup().liberties += 1
             else:
                 other.colour.getGroup().liberties -= 1
-                #assert other.colour.getGroup().liberties >= 0, "Colour %s (in group %s) has %s liberties" % (other.colour.id, other.colour.getDelegate().id, other.colour.getGroup().liberties)
+                assert other.colour.getGroup().liberties >= 0, "Colour %s (in group %s) has %s liberties" % (other.colour.id, other.colour.getDelegate().id, other.colour.getGroup().liberties)
 
         makeLoop = self.random.random() < self.pMakeLoop
         # Make connections.
@@ -242,8 +242,7 @@ class Maze:
                 oColour = other.colour
                 if oColour.getGroup() is not colour.getGroup() or (makeLoop and oColour is cell.colour):
                     liberties = min(colour.getGroup().liberties, oColour.getGroup().liberties)
-                    # FIXME: liberties sometimes < 0
-                    if liberties >= 0 and self.pExtend(liberties) > self.random.random():
+                    if self.pExtend(liberties) > self.random.random():
                         # Punch trough!
                         cell.addConnection(dirn)
                         other.addConnection(Cell.oppositeDirection(dirn))
