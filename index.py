@@ -7,6 +7,8 @@ import cgi
 import maze
 from util.objectregister import ObjectRegister
 
+class AbortVisit(Exception):
+    pass
 
 def visit(mymaze, iterations=10000):
     x = 0
@@ -42,13 +44,13 @@ def visit(mymaze, iterations=10000):
         
         try:
             mycell = mymaze[x,y]
-        except Exception as e:
-            # probably walled self in, teleport out (FIXME handle exception properly)
+        except maze.WalledIn as e:
+            # teleport out
             finished.add((x,y))
             visited.remove((x,y))
             if len(visited)==0:
                 open('out/%s-%s-walledin.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
-                raise Exception("eB=%f, totally walled in at %d" % (mymaze.extendBias, i))
+                raise AbortVisit("eB=%f, totally walled in at %d" % (mymaze.pExtendBias, i))
             else:
                 nx,ny = setchoice(visited)
 
@@ -66,7 +68,7 @@ def visit(mymaze, iterations=10000):
             visited.remove((x,y))
             if len(visited)==0:
                 open('out/%s-%s-walledin.png' % (mymaze.pExtendBias, i),'wb').write(mymaze.png(highlight))
-                raise Exception("eB=%f, totally walled in at %d" % (mymaze.extendBias, i))
+                raise AbortVisit("eB=%f, totally walled in at %d" % (mymaze.pExtendBias, i))
             else:
                 nx,ny = setchoice(visited)
 
@@ -74,8 +76,8 @@ def visit(mymaze, iterations=10000):
 
         try:
             grow(2)
-        except Exception as e:
-            # probably walled self in, but let the walker discover that
+        except maze.WalledIn as e:
+            # let the walker discover that
             pass
 
 
@@ -147,13 +149,16 @@ if __name__=="__main__":
                     })
 
     for eB in (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0):
-        mymaze = maze.Maze(12, pExtendBias=eB, pExtendSensitivity=2.0, pUnifyLower=1.0)
+        mymaze = maze.Maze(12, pExtendBias=eB, pExtendSensitivity=0.2, pUnifyLower=1.0)
 
         try:
             visit(mymaze, 100000)
+        except AbortVisit as e:
+            print("%s: %s" % (e.__class__.__name__, e))
         except Exception as e:
-            print(e)
+            open('out/%s-error.png' % (mymaze.pExtendBias),'wb').write(mymaze.png(mymaze[0,0].colour))
+            raise e
 
-        time.sleep(30)
+
         del(mymaze)
 

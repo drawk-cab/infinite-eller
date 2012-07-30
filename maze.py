@@ -4,6 +4,9 @@ import random
 import util.hsv
 import io, util.png
 
+class WalledIn(Exception):
+    pass
+
 class Colour:
     def __init__(self, id):
         self.id = id
@@ -220,6 +223,8 @@ class Maze:
                 oColour = other.colour
                 if oColour.getGroup() is not colour.getGroup():
                     liberties = min(colour.getGroup().liberties, oColour.getGroup().liberties)
+                    if liberties < 0:
+                        raise ValueError("Group %s has %s liberties, group %s has %s" % (colour.getDelegate().id,colour.getGroup().liberties, oColour.getDelegate().id,oColour.getGroup().liberties))
                     if self.pExtend(liberties) > self.random.random():
                         # Punch trough!
                         cell.addConnection(dirn)
@@ -234,7 +239,7 @@ class Maze:
                         if chooseLower ^ isLower:
                             cell.colour = oColour
         if colour.getGroup().liberties <= 0:
-            raise Exception("Walled myself in!")
+            raise WalledIn
         return cell
 
     def pExtend(self, liberties):
