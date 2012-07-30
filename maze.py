@@ -133,7 +133,7 @@ class Maze:
 
     DIRECTIONS = (Cell.NORTH,Cell.SOUTH,Cell.EAST,Cell.WEST)
 
-    def __init__(self, seed=142857, pExtendBias=0.3, pExtendSensitivity=1.0, pUnifyLower=1.0):
+    def __init__(self, seed=142857, pExtendBias=0.3, pExtendSensitivity=1.0, pUnifyLower=1.0, pMakeLoop=0.0):
         ''' '''
         self.grid = {} # (int, int) -> Cell
         self.numColours = 0
@@ -141,6 +141,7 @@ class Maze:
         self.pExtendBias = pExtendBias
         self.pExtendSensitivity = pExtendSensitivity
         self.pUnifyLower = pUnifyLower
+        self.pMakeLoop = pMakeLoop
 
     def svg(self, highlight=None):
         ''' '''
@@ -184,6 +185,21 @@ class Maze:
             if cell.isConnected( Cell.WEST ):
                 setPixel(dx*2-1,dy*2,r,g,b)
 
+        for dx in range(xr-xl):
+            for dy in range(yr-yl):
+                x = dx + xl
+                y = dy + yl
+                try:
+                    a = self.grid[x,y]
+                    e = self.grid[x,y+1]
+                    c = self.grid[x+1,y]
+                    d = self.grid[x+1,y+1]
+                    if a.isConnected( Cell.EAST ) and c.isConnected( Cell.SOUTH ) and d.isConnected( Cell.WEST ) and e.isConnected( Cell.NORTH ):
+                        r,g,b = a.colour.rgb(highlight)
+                        setPixel(dx*2+1,dy*2+1,r,g,b)
+                except KeyError:
+                    pass
+            
         output = io.BytesIO()
         util.png.Writer( (xr-xl)*2, (yr-yl)*2 ).write( output, pixels )
         outBytes = output.getvalue()
@@ -217,15 +233,17 @@ class Maze:
                 colour.getGroup().liberties += 1
             else:
                 other.colour.getGroup().liberties -= 1
+                #assert other.colour.getGroup().liberties >= 0, "Colour %s (in group %s) has %s liberties" % (other.colour.id, other.colour.getDelegate().id, other.colour.getGroup().liberties)
+
+        makeLoop = self.random.random() < self.pMakeLoop
         # Make connections.
         for dirn, other in steps:
             if other is not None:
                 oColour = other.colour
-                if oColour.getGroup() is not colour.getGroup():
+                if oColour.getGroup() is not colour.getGroup() or (makeLoop and oColour is cell.colour):
                     liberties = min(colour.getGroup().liberties, oColour.getGroup().liberties)
-                    if liberties < 0:
-                        raise ValueError("Group %s has %s liberties, group %s has %s" % (colour.getDelegate().id,colour.getGroup().liberties, oColour.getDelegate().id,oColour.getGroup().liberties))
-                    if self.pExtend(liberties) > self.random.random():
+                    # FIXME: liberties sometimes < 0
+                    if liberties >= 0 and self.pExtend(liberties) > self.random.random():
                         # Punch trough!
                         cell.addConnection(dirn)
                         other.addConnection(Cell.oppositeDirection(dirn))
@@ -238,8 +256,10 @@ class Maze:
                         isLower = cell.colour < oColour
                         if chooseLower ^ isLower:
                             cell.colour = oColour
-        if colour.getGroup().liberties <= 0:
+
+        if colour.getGroup().liberties == 0:
             raise WalledIn
+
         return cell
 
     def pExtend(self, liberties):

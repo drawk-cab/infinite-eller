@@ -148,11 +148,11 @@ if __name__=="__main__":
                       "Cell": maze.Cell
                     })
 
-    for eB in (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0):
-        mymaze = maze.Maze(12, pExtendBias=eB, pExtendSensitivity=0.2, pUnifyLower=1.0)
+    for eB in (0.6,):
+        mymaze = maze.Maze(12, pExtendBias=eB, pExtendSensitivity=1.0, pUnifyLower=1.0, pMakeLoop=0.5)
 
         try:
-            visit(mymaze, 100000)
+            visit(mymaze, 10000000)
         except AbortVisit as e:
             print("%s: %s" % (e.__class__.__name__, e))
         except Exception as e:
