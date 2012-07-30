@@ -37,10 +37,6 @@ def visit(mymaze, iterations=10000):
 
         visited.add((x,y))
         choices = list( maze.Maze.DIRECTIONS )
-        choices.append( maze.Cell.EAST ) 
-        choices.append( maze.Cell.EAST ) 
-        choices.append( maze.Cell.EAST ) 
-        choices.append( maze.Cell.EAST ) 
         
         try:
             mycell = mymaze[x,y]
